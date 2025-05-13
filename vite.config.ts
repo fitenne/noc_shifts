@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://schedule.foobar.one",
+        target: "http://localhost:8080",
         changeOrigin: true,
       },
     },

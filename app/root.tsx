@@ -1,6 +1,10 @@
-import { ColorSchemeScript, mantineHtmlProps, MantineProvider } from '@mantine/core';
-import '@mantine/core/styles.css';
-import '@mantine/dates/styles.css';
+import {
+  ColorSchemeScript,
+  mantineHtmlProps,
+  MantineProvider,
+} from "@mantine/core";
+import "@mantine/core/styles.css";
+import "@mantine/dates/styles.css";
 import {
   isRouteErrorResponse,
   Links,
@@ -10,6 +14,44 @@ import {
   ScrollRestoration,
 } from "react-router";
 import type { Route } from "./+types/root";
+
+export function meta(): Route.MetaDescriptors {
+  return [
+    {
+      title: "今天上不上班？",
+      description: "今天上不上班？",
+    },
+  ];
+}
+
+export function links(): Route.LinkDescriptors {
+  return [
+    {
+      rel: "icon",
+      type: "image/png",
+      href: "/favicon-96x96.png",
+      sizes: "96x96",
+    },
+    {
+      rel: "icon",
+      type: "image/svg+xml",
+      href: "/favicon.svg",
+    },
+    {
+      rel: "shortcut icon",
+      href: "/favicon.ico",
+    },
+    {
+      rel: "apple-touch-icon",
+      href: "/apple-touch-icon.png",
+      sizes: "180x180",
+    },
+    {
+      rel: "manifest",
+      href: "/site.webmanifest",
+    },
+  ];
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -29,7 +71,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     </html>
   );
 }
-
 
 export default function App() {
   return <Outlet />;

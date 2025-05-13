@@ -27,7 +27,7 @@ import {
 } from "react";
 import { useLoaderData } from "react-router";
 
-import { apiBase } from "~/config";
+import { API_BASE } from "~/config";
 import {
   newFromScheduleApiNoTimezone,
   type ScheduleViewModel,
@@ -43,27 +43,6 @@ const CurrentMonthContext = createContext<{
   setCurrentMonth: Dispatch<dayjs.Dayjs>;
   // @ts-ignore
 }>(null);
-
-function ScheduleTable({ body }: { body: React.ReactNode }): React.ReactNode {
-  const localeData = dayjs.localeData();
-  const weekdays = [
-    ...localeData.weekdaysShort().slice(localeData.firstDayOfWeek()),
-    ...localeData.weekdaysShort().slice(0, localeData.firstDayOfWeek()),
-  ];
-
-  return (
-    <Table>
-      <Table.Thead>
-        <Table.Tr>
-          {weekdays.map((day) => (
-            <Table.Th key={day}>{day}</Table.Th>
-          ))}
-        </Table.Tr>
-      </Table.Thead>
-      <Table.Tbody>{body}</Table.Tbody>
-    </Table>
-  );
-}
 
 function ScheduleTableCell({
   highlight,
@@ -87,11 +66,11 @@ function ScheduleTableCell({
           ? {
               root: {
                 backgroundColor:
-                  "light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));",
+                  "light-dark(var(--mantine-color-white), var(--mantine-color-dark-6))",
                 borderRadius: "var(--mantine-radius-md)",
                 boxShadow: "var(--mantine-shadow-xl)",
                 border:
-                  "1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));",
+                  "1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4))",
               },
             }
           : undefined
@@ -132,14 +111,10 @@ function ScheduleTableCell({
   );
 }
 
-function ScheduleTableBody({
-  highlight,
-}: {
-  highlight: dayjs.Dayjs | null;
-}): React.ReactNode {
-  const { currentMonth } = useContext(CurrentMonthContext);
-
-  dayjs.localeData().firstDayOfWeek();
+const _render_body = (
+  currentMonth: dayjs.Dayjs,
+  highlight: dayjs.Dayjs | null
+) => {
   const nDaysBeforeFirstDay =
     (currentMonth.startOf("month").day() -
       dayjs.localeData().firstDayOfWeek() +
@@ -154,21 +129,17 @@ function ScheduleTableBody({
     return currentMonth.startOf("month").add(offsetSinceFirstDay, "day");
   };
 
-  return [...Array(nRows).keys()].map((i) => (
-    <Table.Tr key={i}>
-      {[...Array(7).keys()].map((j) => (
-        <Table.Td key={j}>
-          <ScheduleTableCell
-            highlight={highlight?.isSame(dayFor(i, j), "day") ?? false}
-            day={dayFor(i, j)}
-          />
-        </Table.Td>
-      ))}
-    </Table.Tr>
-  ));
-}
+  return [...Array(nRows).keys()].map((i) =>
+    [...Array(7).keys()].map((j) => (
+      <ScheduleTableCell
+        highlight={highlight?.isSame(dayFor(i, j), "day") ?? false}
+        day={dayFor(i, j)}
+      />
+    ))
+  );
+};
 
-function Schedule({
+function ScheduleTable({
   highlight,
 }: {
   highlight: dayjs.Dayjs | null;
@@ -179,6 +150,17 @@ function Schedule({
     []
   );
   const [currentMonth, setCurrentMonth] = useState(dayjs().set("date", 1));
+
+  const localeData = dayjs.localeData();
+  const weekdays = [
+    ...localeData.weekdaysShort().slice(localeData.firstDayOfWeek()),
+    ...localeData.weekdaysShort().slice(0, localeData.firstDayOfWeek()),
+  ];
+
+  const tableData = {
+    head: weekdays.map((day) => <Table.Th key={day}>{day}</Table.Th>),
+    body: _render_body(currentMonth, highlight),
+  };
 
   return (
     <Container>
@@ -201,7 +183,7 @@ function Schedule({
       </Flex>
       <ScheduleViewModelContext.Provider value={scheduleViewModel}>
         <CurrentMonthContext.Provider value={{ currentMonth, setCurrentMonth }}>
-          <ScheduleTable body={<ScheduleTableBody highlight={highlight} />} />
+          <Table data={tableData} />
         </CurrentMonthContext.Provider>
       </ScheduleViewModelContext.Provider>
     </Container>
@@ -211,15 +193,11 @@ function Schedule({
 export async function loader() {
   return await ky
     .get("shifts", {
-      prefixUrl: apiBase,
+      prefixUrl: API_BASE,
     })
     .json();
 }
 
-export function HydrateFallback(): React.ReactNode {
-  return <Schedule highlight={null} />;
-}
-
 export default function Index(): React.ReactNode {
-  return <Schedule highlight={dayjs()} />;
+  return <ScheduleTable highlight={dayjs()} />;
 }
