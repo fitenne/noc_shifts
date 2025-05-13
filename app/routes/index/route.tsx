@@ -1,5 +1,6 @@
 import {
   Button,
+  Center,
   Container,
   Flex,
   Group,
@@ -158,7 +159,7 @@ function ScheduleTable({
   ];
 
   const tableData = {
-    head: weekdays.map((day) => <Table.Th key={day}>{day}</Table.Th>),
+    head: weekdays.map((day) => <Center>{day}</Center>),
     body: _render_body(currentMonth, highlight),
   };
 
