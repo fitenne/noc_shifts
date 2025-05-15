@@ -14,21 +14,16 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconPick,
+  IconLoader,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import "dayjs/locale/zh-cn";
 import localeData from "dayjs/plugin/localeData";
 import ky from "ky";
-import {
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  type Dispatch,
-} from "react";
-import { useLoaderData } from "react-router";
+import { createContext, useContext, useMemo, useState } from "react";
 
 import { API_BASE } from "~/config";
+import type { Route } from "./+types/route";
 import {
   newFromScheduleApiNoTimezone,
   type ScheduleViewModel,
@@ -37,13 +32,7 @@ import {
 dayjs.extend(localeData);
 dayjs.locale("zh-cn");
 
-// @ts-ignore
-const ScheduleViewModelContext = createContext<ScheduleViewModel>(null);
-const CurrentMonthContext = createContext<{
-  currentMonth: dayjs.Dayjs;
-  setCurrentMonth: Dispatch<dayjs.Dayjs>;
-  // @ts-ignore
-}>(null);
+const ScheduleViewModelContext = createContext<ScheduleViewModel | null>(null);
 
 function ScheduleTableCell({
   highlight,
@@ -55,10 +44,15 @@ function ScheduleTableCell({
   const scheduleViewModel = useContext(ScheduleViewModelContext);
   const theme = useMantineTheme();
 
-  const arrange = scheduleViewModel.arrangeOfDay(day);
+  const noScheduleData = scheduleViewModel === null;
+  const arrange = scheduleViewModel?.arrangeOfDay(day);
 
   const iconWork = <IconPick color="Black" />;
   const iconBreak = <IconBed color="MediumAquamarine" />;
+
+  const iconsForThisDay = [...Array(4).keys()].map((i) =>
+    arrange?.has((i + 1) as 1 | 2 | 3 | 4) ? iconWork : iconBreak
+  );
 
   return (
     <Stack
@@ -82,32 +76,14 @@ function ScheduleTableCell({
       gap="xs"
     >
       <Text>{day.date()}</Text>
-      <div style={arrange === null ? { visibility: "hidden" } : {}}>
-        <Flex>
-          {arrange?.has(1) ? iconWork : iconBreak}
+      {[...Array(4).keys()].map((i) => (
+        <Flex key={i}>
+          {noScheduleData ? <IconLoader /> : iconsForThisDay[i]}
           <Text size="sm" ml="sm">
-            00:00
+            {["00:00", "09:00", "13:00", "21:00"][i]}
           </Text>
         </Flex>
-        <Flex>
-          {arrange?.has(2) ? iconWork : iconBreak}
-          <Text size="sm" ml="sm">
-            09:00
-          </Text>
-        </Flex>
-        <Flex>
-          {arrange?.has(3) ? iconWork : iconBreak}
-          <Text size="sm" ml="sm">
-            13:00
-          </Text>
-        </Flex>
-        <Flex>
-          {arrange?.has(4) ? iconWork : iconBreak}
-          <Text size="sm" ml="sm">
-            21:00
-          </Text>
-        </Flex>
-      </div>
+      ))}
     </Stack>
   );
 }
@@ -145,12 +121,7 @@ function ScheduleTable({
 }: {
   highlight: dayjs.Dayjs | null;
 }): React.ReactNode {
-  const loaderData = useLoaderData();
-  const scheduleViewModel = useMemo(
-    () => newFromScheduleApiNoTimezone(loaderData),
-    []
-  );
-  const [currentMonth, setCurrentMonth] = useState(dayjs().set("date", 1));
+  const [currentMonth, setCurrentMonth] = useState(dayjs().startOf("month"));
 
   const localeData = dayjs.localeData();
   const weekdays = [
@@ -182,16 +153,12 @@ function ScheduleTable({
           </Button>
         </Group>
       </Flex>
-      <ScheduleViewModelContext.Provider value={scheduleViewModel}>
-        <CurrentMonthContext.Provider value={{ currentMonth, setCurrentMonth }}>
-          <Table data={tableData} />
-        </CurrentMonthContext.Provider>
-      </ScheduleViewModelContext.Provider>
+      <Table data={tableData} />
     </Container>
   );
 }
 
-export async function loader() {
+export async function loader(): Promise<{ schedule: Array<object> }> {
   return await ky
     .get("shifts", {
       prefixUrl: API_BASE,
@@ -199,6 +166,29 @@ export async function loader() {
     .json();
 }
 
-export default function Index(): React.ReactNode {
-  return <ScheduleTable highlight={dayjs()} />;
+export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
+  return await serverLoader();
+}
+clientLoader.hydrate = true as const;
+
+export function HydrateFallback() {
+  return <ScheduleTable highlight={null} />;
+}
+
+export default function Index({
+  loaderData,
+}: {
+  loaderData: Route.LoaderArgs;
+}): React.ReactNode {
+  const scheduleViewModel = useMemo(
+    // @ts-ignore
+    () => newFromScheduleApiNoTimezone(loaderData),
+    [loaderData]
+  );
+
+  return (
+    <ScheduleViewModelContext.Provider value={scheduleViewModel}>
+      <ScheduleTable highlight={dayjs()} />
+    </ScheduleViewModelContext.Provider>
+  );
 }
