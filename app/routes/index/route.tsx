@@ -137,7 +137,7 @@ function ScheduleTable({
   return (
     <Container>
       <Flex style={{ justifyContent: "space-between" }} align="center" m="md">
-        <Text>{dayjs().format("MMM YYYY")}</Text>
+        <Text>{currentMonth.format("MMM YYYY")}</Text>
         <Group>
           <Button
             variant="subtle"
