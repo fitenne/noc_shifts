@@ -1,4 +1,3 @@
-export const APP_BASE: string = import.meta.env.VITE_APP_BASE_URL;
-export const API_BASE = import.meta.env.DEV
-  ? new URL("/api/v1", APP_BASE)
-  : "http://localhost:8080/api/v1";
+export const API_ORIGIN: string = import.meta.env.DEV
+  ? "http://localhost:8080"
+  : "http://localhost:8080";

@@ -13,16 +13,15 @@ import {
   IconBed,
   IconChevronLeft,
   IconChevronRight,
-  IconPick,
   IconLoader,
+  IconPick,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import "dayjs/locale/zh-cn";
 import localeData from "dayjs/plugin/localeData";
 import ky from "ky";
 import { createContext, useContext, useMemo, useState } from "react";
-
-import { API_BASE } from "~/config";
+import { API_ORIGIN } from "~/config";
 import type { Route } from "./+types/route";
 import {
   newFromScheduleApiNoTimezone,
@@ -160,8 +159,8 @@ function ScheduleTable({
 
 export async function loader(): Promise<{ schedule: Array<object> }> {
   return await ky
-    .get("shifts", {
-      prefixUrl: API_BASE,
+    .get("api/v1/shifts", {
+      prefixUrl: API_ORIGIN,
     })
     .json();
 }
